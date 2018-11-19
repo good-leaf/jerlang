@@ -204,7 +204,11 @@ read_config(AppName) ->
     RunConfig = lists:foldl(fun(Config, Acc) ->
                 [K, V] = string:tokens(Config, "="),
                 [{K, V} | Acc]
-                end, [{"cookie", atom_to_list(erlang:get_cookie())}, {"appname", atom_to_list(AppName)}, {"java_node", atom_to_list(?JAVA_NODE)}], ContextList),
+                end, [
+        {"cookie", atom_to_list(erlang:get_cookie())},
+        {"appname", atom_to_list(AppName)},
+        {"java_node", atom_to_list(?JAVA_NODE)},
+        {"remote_node", atom_to_list(node())}], ContextList),
     write_config(Dir, RunConfig), RunConfig.
 
 
