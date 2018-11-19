@@ -61,6 +61,7 @@ start_link(Args) ->
     {ok, State :: #state{}} | {ok, State :: #state{}, timeout() | hibernate} |
     {stop, Reason :: term()} | ignore).
 init([Args]) ->
+    process_flag(trap_exit,true),
     AppName = proplists:get_value(appname, Args),
     CallBack = proplists:get_value(callback, Args, {jnode, call_msg}),
     RunConfig = read_config(AppName),
@@ -115,6 +116,7 @@ handle_cast(_Request, State) ->
     {noreply, NewState :: #state{}, timeout() | hibernate} |
     {stop, Reason :: term(), NewState :: #state{}}).
 handle_info({nodedown, ?JAVA_NODE}, #state{runconfig = RunConfig} = State) ->
+    io:format("~p java nodedown restart\n", [?JAVA_NODE]),
     boot_java_node(RunConfig),
     {noreply, State};
 handle_info(Info, #state{callback = {Mod, Fun}} = State) ->
@@ -156,7 +158,7 @@ send_msg(MsgType, MsgData) ->
     ?JAVA_PROCESS ! {whereis(?SERVER), MsgType, MsgData}.
 
 call_msg(Message) ->
-    io:format("recv java node msg:~p", [Message]).
+    io:format("recv java node msg:~p\n", [Message]).
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
@@ -166,7 +168,7 @@ start_java_node(RunConfig) ->
     Jar = proplists:get_value("run_jar", RunConfig),
     JarLog = proplists:get_value("java_log", RunConfig),
     Cmd = "nohup java -jar " ++ Dir ++ "/" ++ Jar ++ " " ++ Dir ++ "/erl.properties >> " ++ JarLog ++ "/java_node.log 2>&1 &",
-    io:format("java cmd:~p", [Cmd]),
+    io:format("java cmd:~p\n", [Cmd]),
     os:cmd(Cmd).
 
 ping_java_node() ->
@@ -179,6 +181,7 @@ ping_java_node() ->
     end.
 
 boot_java_node(RunConfig) ->
+    io:format("run config:~p\n", [RunConfig]),
     kill_java_node(RunConfig),
     start_java_node(RunConfig),
     ping_java_node().
